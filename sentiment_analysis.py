@@ -7,7 +7,7 @@ import pandas as pd
 USERNAME = "faizgram"
 SESSION_FILE = "session-faizgram"
 
-L = instaloader.Instaloader()
+L = instaloader.Instaloader(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
 
 try:
     L.load_session_from_file(username=USERNAME, filename=SESSION_FILE)
