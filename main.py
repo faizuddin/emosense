@@ -4,12 +4,13 @@ import sentiment_analysis as sa
 
 
 # config page
-st.set_page_config(page_title="EmoSense", page_icon=":material/mood:", layout="centered")
+st.set_page_config(page_title="EmoSense", page_icon=":material/mood:", layout="wide")
 
 st.markdown("# EmoSense")
 st.markdown("## *Emotion and Sentiment Analysis*")
 
 col1, col2 = st.columns(2)
+posts = []
 
 with col1:
     with st.form("parameters_form", clear_on_submit=False): 
@@ -31,3 +32,10 @@ with col1:
 with col2:
     with st.container(border=True):
         st.markdown("### :material/description: Extracted texts")
+        st.data_editor(
+            posts,
+            column_config={
+            "Thumb": st.column_config.ImageColumn("Post thumbnail", help="Click on the thumbnail", width="small")
+            },
+            hide_index=True,
+        )
