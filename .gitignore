@@ -1,2 +1,4 @@
 session-faizgram
 __pycache__/sentiment_analysis.cpython-312.pyc
+secrets.toml
+session.json
