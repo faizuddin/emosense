@@ -1,4 +1,10 @@
 session-faizgram
 __pycache__/sentiment_analysis.cpython-312.pyc
+<<<<<<< HEAD
 config/secrets.toml
 session.tw_session
+=======
+secrets.toml
+session.json
+__pycache__/emosense.cpython-310.pyc
+>>>>>>> 4e36de1ab11672148ad23254924f544aea67897b

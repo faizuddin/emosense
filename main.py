@@ -1,6 +1,15 @@
 import streamlit as st
 import pandas as pd
-import sentiment_analysis as sa
+import emosense as emo
+
+
+# logic and backend functions
+@st.cache_resource
+def init():
+
+    init_result = emo.initilise_client("secrets.toml")
+
+    return init_result
 
 
 # config page
@@ -11,6 +20,9 @@ st.markdown("## *Emotion and Sentiment Analysis*")
 
 col1, col2 = st.columns(2)
 posts = []
+
+# initiatlise
+init()
 
 with col1:
     with st.form("parameters_form", clear_on_submit=False): 
@@ -27,15 +39,15 @@ with col1:
                 st.error("Please enter at least one crawl parameters", icon=":material/error:")
             else:
                 st.success("Crawling Instagram...", icon=":material/check:")
-                posts = sa.by_hashtag(hashtag, post_limit, profile_name, location)
+                # posts = sa.by_hashtag(hashtag, post_limit, profile_name, location)
 
 with col2:
     with st.container(border=True):
         st.markdown("### :material/description: Extracted texts")
-        st.data_editor(
-            posts,
-            column_config={
-            "Thumb": st.column_config.ImageColumn("Post thumbnail", help="Click on the thumbnail", width="small")
-            },
-            hide_index=True,
-        )
+        # st.data_editor(
+        #     posts,
+        #     column_config={
+        #     "Thumb": st.column_config.ImageColumn("Post thumbnail", help="Click on the thumbnail", width="small")
+        #     },
+        #     hide_index=True,
+        # )
