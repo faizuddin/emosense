@@ -1,75 +1,213 @@
-from instagrapi import Client
-from instagrapi.exceptions import LoginRequired
+from tweety.filters import SearchFilters
+import nest_asyncio
+from tweety import TwitterAsync
 import toml
-import logging
-
+import os
+from pathlib import Path
 import pandas as pd
+import operator
 
-from PIL import Image
-import requests
-from io import BytesIO
+GLOBAL_CONFIG = {}
+app = TwitterAsync("session")
 
-import pytesseract
-import malaya
+def load_config(secrets_path):
+    with open(secrets_path, "r") as toml_file:
+        global GLOBAL_CONFIG
+        GLOBAL_CONFIG = toml.load(toml_file)
 
+async def auth_X(session_path):
+    sess_file = Path(os.getcwd() + session_path)
 
-cl = Client()
+    if not sess_file.is_file():
+        print("Signing in to create session file.")
 
-def initilise_client(secrets_file):
+        x_twitter = GLOBAL_CONFIG["x"]
+        await app.sign_in(x_twitter["username"], x_twitter["password"])
 
-    with open(secrets_file, 'r') as f:
-        secrets = toml.load(f)
-
-    return login_user(secrets)
-
-
-def login_user(secrets):
-
-    logger = logging.getLogger().setLevel(logging.INFO)
-    login_message = ""
-    """
-    Attempts to login to Instagram using either the provided session information
-    or the provided username and password.
-    """
-
-    session = cl.load_settings("session.json")
-
-    login_via_session = False
-    login_via_pw = False
-
-    if session:
-        try:
-            cl.set_settings(session)
-            cl.login(secrets["instagram"]["username"], secrets["instagram"]["password"])
-
-            # check if session is valid
-            try:
-                cl.get_timeline_feed()
-            except LoginRequired:
-                logger.info("Session is invalid, need to login via username and password")
-
-                old_session = cl.get_settings()
-
-                # use the same device uuids across logins
-                cl.set_settings({})
-                cl.set_uuids(old_session["uuids"])
-
-                cl.login(secrets["instagram"]["username"], secrets["instagram"]["password"])
-            login_via_session = True
-        except Exception as e:
-            logger.info("Couldn't login user using session information: %s" % e)
-
-    if not login_via_session:
-        try:
-            logger.info("Attempting to login via username and password. username: %s" % secrets["instagram"]["username"])
-            if cl.login(secrets["instagram"]["username"], secrets["instagram"]["password"]):
-                login_via_pw = True
-        except Exception as e:
-            login_message = ("Couldn't login user using username and password: %s" % e)
-            logger.info("Couldn't login user using username and password: %s" % e)
-
-    if not login_via_pw and not login_via_session:
-        logger.warn("Couldn't login user with either password or session")
-        raise Exception("Couldn't login user with either password or session")
+    else:
+        print("Authenticating using session file...")
         
-    return login_message
+    await app.connect()
+
+async def scrape_X(search_keywords, num_pages):
+    tweets = await app.search(search_keywords, pages=num_pages, filter_=SearchFilters.Latest(), wait_time=5)
+    tweets = create_df(tweets)
+    
+    # append search keywords column
+    tweets["search_keywords"] = search_keywords
+    
+    return tweets
+
+def create_df(tweets):
+    # lists
+    id = []
+    created_on = []
+    date = []
+    text = []
+    rich_text = []
+    author = []
+    is_retweet = []
+    retweeted_tweet = []
+    is_quoted = []
+    quoted_tweet = []
+    is_reply = []
+    is_sensitive = []
+    reply_counts = []
+    quote_counts = []
+    replied_to = []
+    bookmark_count = []
+    views = []
+    likes = []
+    language = []
+    place = []
+    retweet_counts = []
+    source = []
+    has_moderated_replies = []
+    is_liked = []
+    is_retweeted = []
+    can_reply = []
+    broadcast = []
+    edit_control = []
+    has_newer_version = []
+    audio_space_id = []
+    pool = []
+    community = []
+    media = []
+    user_mentions = []
+    urls = []
+    hashtags = []
+    symbols = []
+    community_note = []
+    url = []
+    grok_share = []
+    threads = []
+    comments = []
+
+    for t in tweets:
+        id.append(t["id"])
+        created_on.append(t["created_on"])
+        date.append(t["date"])
+        text.append(t["text"])
+        rich_text.append(t["rich_text"])
+        author.append(t["author"])
+        is_retweet.append(t["is_retweet"])
+        retweeted_tweet.append(t["retweeted_tweet"])
+        is_quoted.append(t["is_quoted"])
+        quoted_tweet.append(t["quoted_tweet"])
+        is_reply.append(t["is_reply"])
+        is_sensitive.append(t["is_sensitive"])
+        reply_counts.append(t["reply_counts"])
+        quote_counts.append(t["quote_counts"])
+        replied_to.append(t["replied_to"])
+        bookmark_count.append(t["bookmark_count"])
+        views.append(t["views"])
+        likes.append(t["likes"])
+        language.append(t["language"])
+        place.append(t["place"])
+        retweet_counts.append(t["retweet_counts"])
+        source.append(t["source"])
+        has_moderated_replies.append(t["has_moderated_replies"])
+        is_liked.append(t["is_liked"])
+        is_retweeted.append(t["is_retweeted"])
+        can_reply.append(t["can_reply"])
+        broadcast.append(t["broadcast"])
+        edit_control.append(t["edit_control"])
+        has_newer_version.append(t["has_newer_version"])
+        audio_space_id.append(t["audio_space_id"])
+        pool.append(t["pool"])
+        community.append(t["community"])
+        media.append(t["media"])
+        user_mentions.append(t["user_mentions"])
+        urls.append(t["urls"])
+        hashtags.append(t["hashtags"])
+        symbols.append(t["symbols"])
+        community_note.append(t["community_note"])
+        url.append(t["url"])
+        grok_share.append(t["grok_share"])
+        threads.append(t["threads"])
+        comments.append(t["comments"])
+
+    df = pd.DataFrame(list(zip(id,
+                           created_on,
+                           date,
+                           text,
+                           rich_text,
+                           author,
+                           is_retweet,
+                           retweeted_tweet,
+                           is_quoted,
+                           quoted_tweet,
+                           is_reply,
+                           is_sensitive,
+                           reply_counts,
+                           quote_counts,
+                           replied_to,
+                           bookmark_count,
+                           views,
+                           likes,
+                           language,
+                           place,
+                           retweet_counts,
+                           source,
+                           has_moderated_replies,
+                           is_liked,
+                           is_retweeted,
+                           can_reply,
+                           broadcast,
+                           edit_control,
+                           has_newer_version,
+                           audio_space_id,
+                           pool,
+                           community,
+                           media,
+                           user_mentions,
+                           urls,
+                           hashtags,
+                           symbols,
+                           community_note,
+                           url,
+                           grok_share,
+                           threads,
+                           comments)), columns=["id",
+                           "created_on",
+                           "date",
+                           "text",
+                           "rich_text",
+                           "author",
+                           "is_retweet",
+                           "retweeted_tweet",
+                           "is_quoted",
+                           "quoted_tweet",
+                           "is_reply",
+                           "is_sensitive",
+                           "reply_counts",
+                           "quote_counts",
+                           "replied_to",
+                           "bookmark_count",
+                           "views",
+                           "likes",
+                           "language",
+                           "place",
+                           "retweet_counts",
+                           "source",
+                           "has_moderated_replies",
+                           "is_liked",
+                           "is_retweeted",
+                           "can_reply",
+                           "broadcast",
+                           "edit_control",
+                           "has_newer_version",
+                           "audio_space_id",
+                           "pool",
+                           "community",
+                           "media",
+                           "user_mentions",
+                           "urls",
+                           "hashtags",
+                           "symbols",
+                           "community_note",
+                           "url",
+                           "grok_share",
+                           "threads",
+                           "comments"])
+    return df
