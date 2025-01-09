@@ -1,14 +1,20 @@
-from tweety.filters import SearchFilters
 import nest_asyncio
 from tweety import TwitterAsync
+from tweety.filters import SearchFilters
 import toml
 import os
 from pathlib import Path
 import pandas as pd
 import operator
+import malaya
+import fasttext
+
+from pymongo import MongoClient
+import malaya
 
 GLOBAL_CONFIG = {}
 app = TwitterAsync("session")
+
 
 def load_config(secrets_path):
     with open(secrets_path, "r") as toml_file:
@@ -211,3 +217,23 @@ def create_df(tweets):
                            "threads",
                            "comments"])
     return df
+
+
+
+def detect_language(df):
+    fast_text = malaya.language_detection.fasttext()
+
+    langs = []
+    lang_probas = []
+
+    for text in df["text"]:
+        prob_dict = fast_text.predict_proba([text])
+
+        lang = max(prob_dict[0].items(), key=operator.itemgetter(1))[0]
+        prob = max(prob_dict[0].items(), key=operator.itemgetter(1))[1]
+
+        langs.append(lang)
+        lang_probas.append(prob)
+    
+    return df
+
