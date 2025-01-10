@@ -8,3 +8,4 @@ secrets.toml
 session.json
 __pycache__/emosense.cpython-310.pyc
 >>>>>>> 4e36de1ab11672148ad23254924f544aea67897b
+__pycache__/emosense.cpython-312.pyc
