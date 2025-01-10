@@ -218,7 +218,27 @@ def create_df(tweets):
                            "comments"])
     return df
 
+# -----------------------------------------------------------------------
+# Process tweet location
 
+def get_place(df, par):
+
+    for i, place in enumerate(df["place"]):
+        if place:
+            lat = place.get("coordinates")[0].get("latitude")
+            lon = place.get("coordinates")[0].get("longitude")
+
+            df.loc[i,"lat"] = lat
+            df.loc[i,"lon"] = lon
+        else:
+            # print("Empty")
+            df.loc[i,"lat"] = None
+            df.loc[i,"lon"] = None
+
+    return df
+    
+# -----------------------------------------------------------------------
+# Preprocessing
 
 def detect_language(df):
     fast_text = malaya.language_detection.fasttext()
