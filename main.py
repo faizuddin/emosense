@@ -40,7 +40,10 @@ with tab2:
                 st.error("Please enter at least one crawl parameters", icon=":material/error:")
             else:
                 st.success("Scraping X...", icon=":material/check:")
-                # posts = emo.scrape_X(search_keyword, num_pages)
+                
+                posts = emo.scrape_X(search_keyword, num_pages)
+
+                st.dataframe(posts, use_container_width=True)
                 # posts = sa.by_hashtag(hashtag, post_limit, profile_name, location)
 
 
@@ -48,7 +51,9 @@ with tab2:
 # Database
 with tab3:
     post_df = db.get_data()
-    post_df = emo.proc_location(post_df)
+    post_df = emo.detect_language(post_df)
+    # post_df = emo.convert_language(post_df)
+    # post_df = emo.proc_location(post_df)
 
     c = st.container(border=True)
     with c:
@@ -63,17 +68,14 @@ with tab3:
             st.metric(label="Number of keywords", value=num_keywords)
 
         with col3:
-            author_ids = post_df['author'].apply(lambda x: x['id'])
+            author_ids = post_df["author"].apply(lambda x: x["id"])
             st.metric(label="Number of authors", value=len(author_ids.unique()))
 
-        
         with col4:
             st.metric(label="Number of author", value=12344)
 
         st.markdown("### :material/description: Searched Keywords")
         
-    
-
-        dataset = post_df[["id", "place", "search_keywords", "created_on", "text"]]
+        dataset = post_df[["id", "place", "search_keywords", "created_on", "text", "language"]]
         st.dataframe(dataset, use_container_width=True)
 
