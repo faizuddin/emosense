@@ -1,42 +1,39 @@
 import nest_asyncio
-from tweety import TwitterAsync
+from tweety import Twitter, TwitterAsync
 from tweety.filters import SearchFilters
-import toml
 import os
 from pathlib import Path
 import pandas as pd
 import operator
 import malaya
 import fasttext
-
-from pymongo import MongoClient
+import streamlit as st
 import malaya
 
-GLOBAL_CONFIG = {}
-app = TwitterAsync("session")
+@st.cache_resource
+def init_X():
+    app = Twitter("session")
 
-
-def load_config(secrets_path):
-    with open(secrets_path, "r") as toml_file:
-        global GLOBAL_CONFIG
-        GLOBAL_CONFIG = toml.load(toml_file)
-
-async def auth_X(session_path):
-    sess_file = Path(os.getcwd() + session_path)
+    sess_file = Path(os.getcwd() + "/.streamlit")
 
     if not sess_file.is_file():
+        print(sess_file)
         print("Signing in to create session file.")
 
-        x_twitter = GLOBAL_CONFIG["x"]
-        await app.sign_in(x_twitter["username"], x_twitter["password"])
+        x_username = st.secrets["x"]["username"]
+        x_password = st.secrets["x"]["password"]
+        app.sign_in(x_username, x_password)
 
     else:
         print("Authenticating using session file...")
         
-    await app.connect()
+    app.connect()
 
-async def scrape_X(search_keywords, num_pages):
-    tweets = await app.search(search_keywords, pages=num_pages, filter_=SearchFilters.Latest(), wait_time=5)
+    return app
+
+def scrape_X(search_keywords, num_pages):
+    app = init_X()
+    tweets = app.search(search_keywords, pages=num_pages, filter_=SearchFilters.Latest(), wait_time=5)
     tweets = create_df(tweets)
     
     # append search keywords column
@@ -240,8 +237,17 @@ def get_place(df, par):
 # -----------------------------------------------------------------------
 # Preprocessing
 
+@st.cache_resource
+def load_fasttext():
+    return malaya.language_detection.fasttext()
+
+@st.cache_resource
+def load_translation(): 
+    return malaya.translation.huggingface(model = "mesolitica/translation-t5-tiny-standard-bahasa-cased")
+    # return malaya.translation.huggingface(model = 'mesolitica/translation-nanot5-small-malaysian-cased')
+
 def detect_language(df):
-    fast_text = malaya.language_detection.fasttext()
+    fast_text = load_fasttext()
 
     langs = []
     lang_probas = []
@@ -255,5 +261,18 @@ def detect_language(df):
         langs.append(lang)
         lang_probas.append(prob)
     
+    df["language"] = langs
+    
     return df
+
+def convert_language(df):
+    translator = load_translation()
+
+    for i, lang in enumerate(df["language"]):    
+        if lang != "local-malay" or lang != "standard-malay":
+            df.loc[i, "translated"] = translator.generate([df.loc[i, "text"]], to_lang="ms", max_length = 500)
+
+    return df
+
+    
 
